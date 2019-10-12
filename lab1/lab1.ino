@@ -10,6 +10,21 @@
 #define G_OUT 7
 #define B_OUT 8
 
+#include "pitches.h"
+#include "button.h"
+#include "buzzer.h"
+
+#define PIN_BUZZER 6
+#define PIN_BUTTON_OFF 5
+
+Button buttonOff(PIN_BUTTON_OFF);
+Buzzer buzzer(PIN_BUZZER);
+
+
+int notes[] = {NOTE_G3, NOTE_SILENCE, NOTE_G3, NOTE_SILENCE, NOTE_G3, NOTE_SILENCE, NOTE_DS3, NOTE_SILENCE};
+double durations[] = {8, 8, 1, 8, 1, 8, 1, 24};
+int melodyLength = 8;
+
 MD_TCS230 colorSensor(S2_OUT, S3_OUT, S0_OUT, S1_OUT);
 
 void setup()
@@ -34,6 +49,9 @@ void setup()
     pinMode(R_OUT, OUTPUT);
     pinMode(G_OUT, OUTPUT);
     pinMode(B_OUT, OUTPUT);
+
+    buzzer.setMelody(notes, durations, melodyLength);
+    buzzer.turnSoundOn();
 }
 
 void loop() 
@@ -46,6 +64,11 @@ void loop()
     colorSensor.getRGB(&rgb);
     print_rgb(rgb);
     set_rgb_led(rgb);
+    buzzer.playSound();
+    if (buttonOff.wasPressed())
+    {
+        buzzer.turnSoundOff();
+    }
 }
 
 void print_rgb(colorData rgb)
