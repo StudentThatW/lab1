@@ -1,11 +1,12 @@
 #include <Arduino.h>
 #include <MD_TCS230.h>
 
+/*
 #define  S0_OUT  2
 #define  S1_OUT  3
 #define  S2_OUT  4
 #define  S3_OUT  5
-
+*/
 #define R_OUT 6
 #define G_OUT 7
 #define B_OUT 8
@@ -14,76 +15,99 @@
 #include "button.h"
 #include "buzzer.h"
 
-#define PIN_BUZZER 6
-#define PIN_BUTTON_OFF 5
+#define PIN_1_BUTTON 5
+#define PIN_2_BUTTON 4
+#define PIN_3_BUTTON 3
 
-Button buttonOff(PIN_BUTTON_OFF);
-Buzzer buzzer(PIN_BUZZER);
+Button button1(PIN_1_BUTTON);
+Button button2(PIN_2_BUTTON);
+Button button3(PIN_3_BUTTON);
 
-
-int notes[] = {NOTE_G3, NOTE_SILENCE, NOTE_G3, NOTE_SILENCE, NOTE_G3, NOTE_SILENCE, NOTE_DS3, NOTE_SILENCE};
-double durations[] = {8, 8, 1, 8, 1, 8, 1, 24};
-int melodyLength = 8;
-
-MD_TCS230 colorSensor(S2_OUT, S3_OUT, S0_OUT, S1_OUT);
-
+bool is_out_r = false;
+int old_r = 255;
+bool is_out_g = false;
+int old_g = 255;
+bool is_out_b = false;
+int old_b = 255;
+ 
 void setup()
 {
-    Serial.begin(115200);
-    Serial.println("Started!");
-
-    sensorData whiteCalibration;
-    whiteCalibration.value[TCS230_RGB_R] = 0;
-    whiteCalibration.value[TCS230_RGB_G] = 0;
-    whiteCalibration.value[TCS230_RGB_B] = 0;
-
-    sensorData blackCalibration;
-    blackCalibration.value[TCS230_RGB_R] = 0;
-    blackCalibration.value[TCS230_RGB_G] = 0;
-    blackCalibration.value[TCS230_RGB_B] = 0;
-
-    colorSensor.begin();
-    colorSensor.setDarkCal(&blackCalibration);
-    colorSensor.setWhiteCal(&whiteCalibration);
-
+    Serial.begin(9600);
     pinMode(R_OUT, OUTPUT);
     pinMode(G_OUT, OUTPUT);
     pinMode(B_OUT, OUTPUT);
-
-    buzzer.setMelody(notes, durations, melodyLength);
-    buzzer.turnSoundOn();
 }
 
 void loop() 
-{
-    colorData rgb;
-    colorSensor.read();
+{ 
 
-    while (!colorSensor.available());
-
-    colorSensor.getRGB(&rgb);
-    print_rgb(rgb);
-    set_rgb_led(rgb);
-    buzzer.playSound();
-    if (buttonOff.wasPressed())
+    if (button1.wasPressed())
     {
-        buzzer.turnSoundOff();
+       if (!is_out_r)
+       {
+         analogWrite(R_OUT, 255);
+         is_out_r = true; 
+         Serial.println("was pressed"); 
+       }
+       else
+       {
+         analogWrite(R_OUT, 255 - old_r);
+         is_out_r = false; 
+         Serial.println("was pressed kek");
+         Serial.println(old_r);
+       }
     }
-}
 
-void print_rgb(colorData rgb)
-{
-  Serial.print(rgb.value[TCS230_RGB_R]);
-  Serial.print(" ");
-  Serial.print(rgb.value[TCS230_RGB_G]);
-  Serial.print(" ");
-  Serial.print(rgb.value[TCS230_RGB_B]);
-  Serial.println();
-}
+    if (button2.wasPressed())
+    {
+       if (!is_out_g)
+       {
+         analogWrite(G_OUT, 255);
+         is_out_g = true; 
+         Serial.println("was pressed"); 
+       }
+       else
+       {
+         analogWrite(G_OUT, 255 - old_g);
+         is_out_g = false; 
+         Serial.println("was pressed kek");
+       }
+    }
 
-void set_rgb_led(colorData rgb)
-{
-    analogWrite(R_OUT, 255 - rgb.value[TCS230_RGB_R]);
-    analogWrite(G_OUT, 255 - rgb.value[TCS230_RGB_G]);
-    analogWrite(B_OUT, 255 - rgb.value[TCS230_RGB_B]);
+    if (button3.wasPressed())
+    {
+       if (!is_out_b)
+       {
+         analogWrite(B_OUT, 255);
+         is_out_b = true; 
+         Serial.println("was pressed"); 
+       }
+       else
+       {
+         analogWrite(B_OUT, 255 - old_b);
+         is_out_b = false; 
+         Serial.println("was pressed kek");
+       }
+    }
+    
+    while (Serial.available() > 0)
+  {
+    String data = Serial.readString();
+    char charBufVar[20];
+    data.toCharArray(charBufVar, 20);
+    char * pch;
+    pch = strtok (charBufVar," ");
+    Serial.println(data.substring(0, data.indexOf(" ")));
+    old_r = data.substring(0, data.indexOf(" ")).toInt();
+    Serial.println(data.substring(data.indexOf(" ") + 1, data.lastIndexOf(" ")));
+    old_g = data.substring(data.indexOf(" ") + 1, data.lastIndexOf(" ")).toInt();
+    Serial.println(data.substring(data.lastIndexOf(" ") + 1));
+    old_b = data.substring(data.lastIndexOf(" ") + 1).toInt();
+    // устанавливаем яркость светодиода
+    
+    analogWrite(R_OUT, 255 - old_r);
+    analogWrite(G_OUT, 255 - old_g);
+    analogWrite(B_OUT, 255 - old_b);
+    
+  }
 }
